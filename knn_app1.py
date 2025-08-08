@@ -55,8 +55,10 @@ X_new = pd.DataFrame(week1_games, columns=['Game', 'Spread', 'Total'])
 # Train and predict
 model = KNeighborsClassifier(n_neighbors=7)
 clf = model.fit(X_train, y_train)
-X_new['Prediction'] = clf.predict(X_new[['Spread', 'Total']])
-X_new['Prediction'] = X_new['Prediction'].map({1: 'Under', 0: 'Over'})
+X_new_features = X_new[['Spread', 'Total']]
+raw_preds = clf.predict(X_new_features)
+X_new['Prediction'] = ['Under' if p == 1 else 'Over' for p in raw_preds]
+
 
 # Get neighbors
 distances, indices = clf.kneighbors(X_new[['Spread', 'Total']])
