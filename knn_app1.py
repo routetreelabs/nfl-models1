@@ -14,6 +14,9 @@ from sklearn.neighbors import KNeighborsClassifier
 # Load historical data
 df = pd.read_csv("nfl_cleaned_for_modeling_2015-2024-Copy1.csv")
 
+# Enforce deterministic row order BEFORE filtering or training
+df = df.sort_values(by=['Season', 'Tm_Name']).reset_index(drop=True)
+
 # Preprocessing
 df['True_Total'] = df['Tm_Pts'] + df['Opp_Pts']
 df['Over'] = np.where(df['True_Total'] > df['Total'], 1, 0)
@@ -24,7 +27,7 @@ df = df.query('Home == 1').reset_index(drop=True)
 # Train on all games BEFORE 2025 Week 1
 train_df = df.query('Season < 2025 or (Season == 2025 and Week < 1)')
 
-# Enforce deterministic row order for KNN tie-breaking
+# Sort train_df for KNN tie-breaking consistency
 train_df = train_df.sort_values(['Season', 'Week', 'Tm_Name']).reset_index(drop=True)
 
 features = ['Spread', 'Total']
@@ -52,6 +55,9 @@ week1_games = [
 ]
 X_new = pd.DataFrame(week1_games, columns=['Game', 'Spread', 'Total'])
 
+# Make sure all numeric columns are float type for consistency
+X_new[['Spread', 'Total']] = X_new[['Spread', 'Total']].astype(float)
+
 # Train and predict
 model = KNeighborsClassifier(n_neighbors=7)
 clf = model.fit(X_train, y_train)
@@ -59,9 +65,8 @@ X_new_features = X_new[['Spread', 'Total']]
 raw_preds = clf.predict(X_new_features)
 X_new['Prediction'] = ['Under' if p == 1 else 'Over' for p in raw_preds]
 
-
 # Get neighbors
-distances, indices = clf.kneighbors(X_new[['Spread', 'Total']])
+distances, indices = clf.kneighbors(X_new_features)
 
 # Analyze neighbors
 confidence_percents = []
@@ -85,7 +90,6 @@ for i in range(len(X_new)):
     avg_distances.append(round(avg_distance, 3))
     confidence_scores.append(round(confidence_score, 1))  # 1 decimal for clarity
 
-
 # Attach scores to X_new
 X_new['ConfidencePercent'] = confidence_percents
 X_new['AvgDistance'] = avg_distances
@@ -95,26 +99,27 @@ X_new['Neighbors'] = [
     for idx in indices
 ]
 
+# Optional: show SHA of train_df to debug if needed
+# st.write("SHA256 of train_df:", pd.util.hash_pandas_object(train_df).sum())
+
 # Display
 st.title("NFL Over/Under Predictions – 2025 Week 1")
 
 for _, row in X_new.iterrows():
     st.markdown(f"### {row['Game']}")
-    
+
     # Prediction summary
     st.write(
         f"**Spread:** {row['Spread']} | **Total:** {row['Total']} | **Prediction:** `{row['Prediction']}`"
     )
-    
+
     # Confidence metrics
     st.write(
         f"Confidence: **{row['ConfidencePercent'] * 100:.1f}%** | "
         f"Avg Distance: **{row['AvgDistance']}** | "
         f"Score: **{row['ConfidenceScore']:.3f}**"
     )
-    
+
     # Neighbor breakdown
     with st.expander("Similar Matchups & Results"):
         st.dataframe(pd.DataFrame(row['Neighbors']))
-
-
