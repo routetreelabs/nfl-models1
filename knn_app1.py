@@ -8,6 +8,9 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import sklearn
+st.write("scikit‑learn version (live):", sklearn.__version__)
+
 from sklearn.neighbors import KNeighborsClassifier
 
 # Load historical data
