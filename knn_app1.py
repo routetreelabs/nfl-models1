@@ -34,7 +34,7 @@ train_df = train_df.sort_values(['Season', 'Week', 'Tm_Name']).reset_index(drop=
 # st.write("SHA256 of train_df:", pd.util.hash_pandas_object(train_df).sum())
 
 features = ['Spread', 'Total']
-X_train = train_df[features]
+X_train = train_df[features].astype(float).round(4)
 y_train = train_df['Under']
 
 # 2025 Week 1 matchups
@@ -61,7 +61,7 @@ week1_games = [
 X_new = pd.DataFrame(week1_games, columns=['Game', 'Spread', 'Total'])
 
 # ✅ Force correct float dtype for precision consistency
-X_new[['Spread', 'Total']] = X_new[['Spread', 'Total']].astype(float)
+X_new[['Spread', 'Total']] = X_new[['Spread', 'Total']].astype(float).round(4)
 X_new_features = X_new[['Spread', 'Total']]
 
 # Train and predict
