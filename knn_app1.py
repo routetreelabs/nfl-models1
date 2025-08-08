@@ -75,11 +75,14 @@ for i in range(len(X_new)):
     agreeing = np.sum(neighbor_labels == prediction_label)
     confidence_percent = agreeing / len(neighbor_labels)
     avg_distance = np.mean(neighbor_dists)
-    confidence_score = confidence_percent / (avg_distance + 1e-3)
+
+    # Scaled score (0–100)
+    confidence_score = (confidence_percent * 100) * (1 - avg_distance)
 
     confidence_percents.append(round(confidence_percent, 3))
     avg_distances.append(round(avg_distance, 3))
-    confidence_scores.append(round(confidence_score, 3))
+    confidence_scores.append(round(confidence_score, 1))  # 1 decimal for clarity
+
 
 # Attach scores to X_new
 X_new['ConfidencePercent'] = confidence_percents
